@@ -12,6 +12,7 @@
 ## TODO
 - [ ] struct support
 - [ ] enum support
+- [ ] union suppport
 - [ ] template class support
 - [ ] function support
 - [ ] reflection support

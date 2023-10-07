@@ -113,12 +113,12 @@ class CppClassAnalyze:
         :return:
         """
         # load header
-        # header_tu = self.index.parse(None, self.build_args.get_compile_cmd(self.header_path, True),
-        #                              options=cl.TranslationUnit.PARSE_INCOMPLETE | cl.TranslationUnit.PARSE_DETAILED_PROCESSING_RECORD)
-        # self.header_tu = header_tu
-        # diagnostics = show.get_diagnostics(header_tu)
-        # if len(diagnostics) != 0:
-        #     logger.warning(f"{pformat(diagnostics)}")
+        header_tu = self.index.parse(None, self.build_args.get_compile_cmd(self.header_path, True),
+                                     options=cl.TranslationUnit.PARSE_INCOMPLETE | cl.TranslationUnit.PARSE_DETAILED_PROCESSING_RECORD)
+        self.header_tu = header_tu
+        diagnostics = show.get_diagnostics(header_tu)
+        if len(diagnostics) != 0:
+            logger.warning(f"{pformat(diagnostics)}")
         # load cpp
         cpp_tu = self.index.parse(None, self.build_args.get_compile_cmd(self.cpp_path, False),
                                   options=cl.TranslationUnit.PARSE_DETAILED_PROCESSING_RECORD)
@@ -132,14 +132,14 @@ class CppClassAnalyze:
         """
         xxx.generated.h mast be included at last of the xxx.h
         """
-        # header_tu = self.header_tu
-        # includes = [x for x in header_tu.get_includes()]
-        # if len(includes) <= 0:
-        #     raise GeneratedException(f"{self.file_name}.generated.h must be included by {self.header_path}")
-        # last = includes[-1]
-        # if not last.include.name.endswith(f"{self.file_name}.generated.h"):
-        #     raise GeneratedException(f"{self.file_name}.generated.h must be included at last")
-        # logger.debug(f"pass include check")
+        header_tu = self.header_tu
+        includes = [x for x in header_tu.get_includes()]
+        if len(includes) <= 0:
+            raise GeneratedException(f"{self.file_name}.generated.h must be included by {self.header_path}")
+        last = includes[-1]
+        if not last.include.name.endswith(f"{self.file_name}.generated.h"):
+            raise GeneratedException(f"{self.file_name}.generated.h must be included at last")
+        logger.debug(f"pass include check")
         cpp_tu = self.cpp_tu
         # for x in cpp_tu.get_includes():
         #     if Path(x.include.name).resolve() == Path(self.header_path).resolve():
@@ -164,11 +164,14 @@ class CppClassAnalyze:
 
         def pre_check(node):
             src_file: cl.File = node.location.file
-            if src_file is None or Path(src_file.name).resolve() == Path(self.header_path).resolve():
+            if src_file is None and node.kind == cl.CursorKind.TRANSLATION_UNIT:
+                return True
+            if src_file is not None and Path(src_file.name).resolve() == Path(self.header_path).resolve():
                 return True
             else:
                 return False
 
+        valid_type = [cl.CursorKind.STRUCT_DECL, cl.CursorKind.CLASS_DECL, cl.CursorKind.UNION_DECL]
         def get_basic_infos(node: cl.Cursor):
             nonlocal generated_class_cursor
             if generated_class_cursor is not None:
@@ -177,10 +180,13 @@ class CppClassAnalyze:
                 return
                 # process
             kind = node_kind(node)
-            if kind == cl.CursorKind.STRUCT_DECL and node.spelling.startswith(f"{self.header_mark}_GENERATED_MARK"):
+            if kind in valid_type and node.spelling.startswith(f"{self.header_mark}_GENERATED_MARK"):
                 generated_class_cursor = node.semantic_parent
             # recursive children
             for n in node.get_children():
+                child_kind = node_kind(n)
+                if child_kind != cl.CursorKind.NAMESPACE and child_kind not in valid_type:
+                    continue
                 get_basic_infos(n)
 
         def trans_to_cursor(node: cl.Cursor):
