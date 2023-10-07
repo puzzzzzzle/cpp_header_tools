@@ -10,7 +10,9 @@ namespace generated_test {
 namespace nn {
 CH_CLASS()
 class BookActor {
-  CH_GENERATED()
+  CH_GENERATED(BookActor)
+
+
   CH_PROPERTY(ALIAS = "prize", )
   double prize_{};
 

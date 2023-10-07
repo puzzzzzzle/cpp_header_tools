@@ -15,9 +15,8 @@ class GeneratedItem:
 
 
 class GenerateSession:
-    def __init__(self, analyzer, relations, header_path: str, cpp_path: str = None):
+    def __init__(self, analyzer,  header_path: str, cpp_path: str = None):
         self.analyzer = analyzer
-        self.relations = relations
         self.writer_target_dir = {"generated.h": header_path, "generated.cpp": cpp_path}
 
         # generated for curr file
@@ -90,8 +89,23 @@ class GenerateSession:
 
     def _make_generated_inner_class(self):
         item: GeneratedItem
-        result = "#undef  CH_GENERATED\n"
-        result += "#define CH_GENERATED() \\\n"
+        result=\
+fR"""
+// common
+#undef CONCAT_IMPL
+#undef MACRO_CONCAT
+#define CONCAT_IMPL( x, y )  x##y
+#define MACRO_CONCAT( x, y ) CONCAT_IMPL( x, y )
+
+#undef FILE_UID
+#define FILE_UID CH_GENERATED_{self.analyzer.header_uid}_
+
+// each
+#undef CH_GENERATED
+#define CH_GENERATED(id) MACRO_CONCAT(FILE_UID,id)(...)
+
+#define CH_GENERATED_{self.analyzer.header_uid}_{self.analyzer.relations[0]["custom_id"]}(...)\
+"""
         result += "private:\\\n"
         for item in self.generated_inner_class:
             lines = item.generated_code.split("\n")

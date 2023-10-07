@@ -42,7 +42,6 @@ class CppClassAnalyze:
 
         self.out_header = None
         self.header_tu = None
-        self.relations = None
         self.header_inc = None
 
         self.header_uid = str(Path(self.header_path).resolve().as_posix()) \
@@ -50,6 +49,8 @@ class CppClassAnalyze:
             .replace(".", "_") \
             .replace(":", "_")
         self.header_mark = f"__CPP_HEADER_TOOLS_"
+
+        self.relations = []
 
     @time_me()
     def analyze(self):
@@ -99,7 +100,7 @@ class CppClassAnalyze:
         for name, info in macros.items():
             result += f"#undef {name}\n"
 
-        result += f"#define CH_GENERATED(...) struct MACRO_CONCAT({self.header_mark}_GENERATED_MARK_,__COUNTER__) {{}};\n"
+        result += f"#define CH_GENERATED(id) struct MACRO_CONCAT({self.header_mark}_GENERATED_MARK_,id) {{}};\n"
         for name, info in macros.items():
             pre_defined = f"#define {name}(...) struct MACRO_CONCAT({self.header_mark}_{name}_MARK_,__COUNTER__) {{}};\n"
             result += pre_defined
@@ -158,6 +159,7 @@ class CppClassAnalyze:
         # show.traverse(self.cpp_tu.cursor, 0, self.header_path)
 
         generated_class_cursor: cl.Cursor = None
+        custom_id = None
         brothers = []
         decorate_info = []
         decorate_info_display = []
@@ -174,6 +176,7 @@ class CppClassAnalyze:
         valid_type = [cl.CursorKind.STRUCT_DECL, cl.CursorKind.CLASS_DECL, cl.CursorKind.UNION_DECL]
         def get_basic_infos(node: cl.Cursor):
             nonlocal generated_class_cursor
+            nonlocal custom_id
             if generated_class_cursor is not None:
                 return
             if not pre_check(node):
@@ -182,6 +185,7 @@ class CppClassAnalyze:
             kind = node_kind(node)
             if kind in valid_type and node.spelling.startswith(f"{self.header_mark}_GENERATED_MARK"):
                 generated_class_cursor = node.semantic_parent
+                custom_id = node.spelling[len(f"{self.header_mark}_GENERATED_MARK_"):]
             # recursive children
             for n in node.get_children():
                 child_kind = node_kind(n)
@@ -244,6 +248,6 @@ class CppClassAnalyze:
             f"\nclass:{pformat((generated_class_cursor.kind, generated_class_cursor.spelling))}\n"
             f"class decorated:\n{pformat([(x.kind, x.spelling) for x in brothers])}\n")
         logger.debug(f"inner decorated:\n{pformat(decorate_info_display)}")
-        self.relations = {"class": generated_class_cursor, "decorated": brothers,
-                          "inner_decorated": decorate_info}
+        self.relations.append({"class": generated_class_cursor, "decorated": brothers,
+                               "inner_decorated": decorate_info, "custom_id": custom_id})
         pass

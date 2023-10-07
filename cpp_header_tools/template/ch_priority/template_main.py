@@ -83,7 +83,7 @@ def collect_info(target: cl.Cursor, decorated: cl.Cursor, metas: list):
 
 def generate_main(analyzer, session: GenerateSession, self_infos):
     session.get_generated_header().append(GeneratedItem("CH_PROPERTY", "#define CH_PROPERTY(...) "))
-    inner_decorated = analyzer.relations["inner_decorated"]
+    inner_decorated = analyzer.relations[0]["inner_decorated"]
     session.get_generated_header()
     for decorated in inner_decorated:
         target: cl.Cursor = decorated["target"]

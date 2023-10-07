@@ -42,7 +42,7 @@ class CompileDBBuilder:
         assert Path(header_path).exists() and Path(header_path).is_file()
         analyzer = CppClassAnalyze(header_path, cpp_path, self.args_getter, self.templates, outer_header_path)
         analyzer.analyze()
-        session = GenerateSession(analyzer, analyzer.relations, outer_header_path, out_cpp_path)
+        session = GenerateSession(analyzer, outer_header_path, out_cpp_path)
         driver = GenerateDriver(self.templates, analyzer, session)
         driver.generate()
         self.generated_sessions.append(session)
