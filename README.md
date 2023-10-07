@@ -15,3 +15,4 @@
 - [ ] template class support
 - [ ] function support
 - [ ] reflection support
+- [ ] msvc support
