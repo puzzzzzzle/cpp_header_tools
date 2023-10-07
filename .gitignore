@@ -1,0 +1,8 @@
+/dist
+/log
+**/*.generated.h
+**/*.generated.cpp
+**/*.pyc
+tests/cmake-build-debug
+**/.idea
+**/log
