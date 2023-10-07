@@ -1,7 +1,3 @@
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 
-int main(int argc, char **argv) {
-  int iRet = 0;
-
-
-  return iRet;
-}
+#include "doctest.h"
